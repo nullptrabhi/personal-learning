@@ -1,0 +1,59 @@
+1] underfitting and overfitting
+2] Naive Bayes is really just smart counting from past cases. Here’s a made-up example from your world (the numbers are invented, only to show the logic).
+
+The setup
+
+You have records of 100 past plastic formulations tested for UL94 V-0 flame rating:
+
+40 passed
+60 failed
+
+You want to predict whether a new formulation will pass.
+
+Step 1: Start with the base rate (no other info)
+
+Before looking at the new sample, 40 out of 100 passed. So the best blind guess is “fail” (60% vs 40%). This starting belief is called the prior.
+
+Step 2: Add one clue
+
+The new sample contains a good dose of FR additive. You look back at your records:
+
+	Had FR additive	No additive
+Passed (40)	32	8
+Failed (60)	12	48
+
+Of all samples that had the additive (32 + 12 = 44), 32 passed. So 32/44 ≈ 73% chance of passing.
+
+That jump from 40% to 73% is Bayes’ theorem in action: you updated your belief using evidence. Nothing more mysterious than that.
+
+Step 3: Add a second clue (where “naive” comes in)
+
+The new sample is also glass-fibre filled. From your records:
+
+Among the 40 passes, 30 were glass-filled (75%)
+Among the 60 fails, 24 were glass-filled (40%)
+
+Now you combine the clues by multiplying, for each outcome:
+
+Pass score = 40% (prior) × 80% (had additive, 32 of 40) × 75% (glass-filled) = 0.24
+Fail score = 60% (prior) × 20% (had additive, 12 of 60) × 40% (glass-filled) = 0.048
+
+Scale them to add up to 100%: pass = 0.24 / (0.24 + 0.048) ≈ 83%, fail ≈ 17%.
+
+Prediction: likely to pass.
+
+Why is it called “naive”?
+
+Multiplying the clues assumes they are independent, meaning the additive and the glass fibre don’t affect each other’s effect. In real materials they often do interact (glass fibre can change how a material burns and drips, so the additive may behave differently). That assumption is a simplification, hence “naive.”
+
+Despite that, it often works surprisingly well, especially when you have little data, because it needs only simple counts rather than a complex model.
+
+Where it fits
+It’s a classification method: pass/fail, metal/insulator, stable/unstable.
+It’s fast, easy to build, and a good first baseline.
+Its weakness is the independence assumption, so for strongly interacting features, tree-based or neural models usually do better.
+
+One-line summary: start with how common each outcome was in the past, then adjust that guess for each clue by checking how often that clue showed up with each outcome.
+
+Want me to explain the next learner on the list (k-nearest neighbours) the same way, or move on to Segment 3?
+3]
