@@ -180,6 +180,11 @@
     .empty { display: none; padding: 38px 15px; color: var(--muted); text-align: center; }
     .footnote { margin-top: 18px; color: var(--muted); font-size: 12px; }
     .reset { border-color: #68484d; color: #ffb6b6; }
+    .progress-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 13px; }
+    .progress-actions .control { flex: 1; padding: 7px 9px; font-size: 12px; }
+    .progress-status { min-height: 1.4em; margin: 8px 2px 0; color: var(--accent); font-size: 12px; }
+    .progress-status.error { color: #ffb6b6; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     @media (max-width: 700px) {
       .shell { padding: 23px 14px 60px; }
       .hero { grid-template-columns: 1fr; gap: 18px; }
@@ -199,12 +204,18 @@
       <div>
         <div class="eyebrow">Your practice, one pattern at a time</div>
         <h1>DSA Field Guide</h1>
-        <p class="intro">A hands-on tracker for the full sheet: learn each sub-concept, study C++ patterns in LeetCode and Codeforces styles, and keep your progress saved on this device.</p>
+        <p class="intro">A hands-on tracker for the full sheet: learn each sub-concept, study C++ patterns in LeetCode and Codeforces styles, and keep your progress saved on this device. Export a backup to move your checkmarks to another browser.</p>
       </div>
       <section class="progress-card" aria-label="Overall progress">
         <div class="progress-label"><span>Overall progress</span><strong id="percent">0%</strong></div>
         <div class="bar" role="progressbar" aria-label="Overall progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="bar"></span></div>
         <div class="progress-meta"><span id="done-count">0 done</span><span id="total-count">0 items</span></div>
+        <div class="progress-actions">
+          <button id="export-progress" class="control" type="button">Export progress</button>
+          <button id="import-progress" class="control" type="button">Import backup</button>
+          <input id="import-file" class="visually-hidden" type="file" accept=".json,application/json" tabindex="-1">
+        </div>
+        <p id="progress-status" class="progress-status" role="status" aria-live="polite"></p>
       </section>
     </header>
 
@@ -221,7 +232,7 @@
     <nav id="topic-nav" class="topic-nav" aria-label="Jump to topic"></nav>
     <section id="topics" aria-label="DSA topics"></section>
     <p class="empty" id="empty">No matches. Try another search or filter.</p>
-    <p class="footnote">Progress is stored locally in this browser (localStorage). Code snippets are compact pattern demonstrations: adapt the signature and input/output to the exact problem statement.</p>
+    <p class="footnote">Progress is stored locally in this browser. Use Export/Import to move a JSON backup between devices or browsers. Code snippets are compact pattern demonstrations: adapt the signature and input/output to the exact problem statement.</p>
   </main>
 
   <script>
@@ -451,6 +462,7 @@
     };
     const patternFor = key => aliases[key] || key;
     const stateKey = "dsa-field-guide-progress-v1";
+    const backupVersion = 1;
     let progress = {};
     try { progress = JSON.parse(localStorage.getItem(stateKey) || "{}"); } catch (error) { console.warn("Could not read saved DSA progress.", error); }
     const el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
@@ -463,6 +475,56 @@
       catch (error) { console.error("Could not save DSA progress to localStorage.", error); }
       updateProgress();
       applyFilter();
+    }
+    function showProgressStatus(message, isError = false) {
+      const status = document.getElementById("progress-status");
+      status.textContent = message;
+      status.classList.toggle("error", isError);
+    }
+    function exportProgress() {
+      const backup = {
+        app: "dsa-field-guide",
+        version: backupVersion,
+        exportedAt: new Date().toISOString(),
+        progress
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = el("a");
+      link.href = url;
+      link.download = `dsa-progress-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showProgressStatus("Progress backup downloaded.");
+    }
+    async function importProgress(file) {
+      try {
+        const backup = JSON.parse(await file.text());
+        if (!backup || backup.app !== "dsa-field-guide" || backup.version !== backupVersion ||
+            !backup.progress || typeof backup.progress !== "object" || Array.isArray(backup.progress)) {
+          throw new Error("This is not a supported DSA Field Guide backup.");
+        }
+        const validKeys = new Set(allItems());
+        for (const [key, value] of Object.entries(backup.progress)) {
+          if (!validKeys.has(key) || typeof value !== "boolean") {
+            throw new Error("The backup contains invalid progress data.");
+          }
+        }
+        const merged = { ...progress };
+        for (const [key, value] of Object.entries(backup.progress)) {
+          merged[key] = Boolean(merged[key] || value);
+        }
+        localStorage.setItem(stateKey, JSON.stringify(merged));
+        progress = merged;
+        render();
+        const done = allItems().filter(key => progress[key]).length;
+        showProgressStatus(`Backup imported and merged. ${done} of ${allItems().length} items done.`);
+      } catch (error) {
+        console.error("Could not import DSA progress backup.", error);
+        showProgressStatus(error instanceof SyntaxError ? "Could not read the backup: invalid JSON." : error.message || "Could not import the backup.", true);
+      }
     }
     function makeSnippet(patternKey, conceptName, topicName, index) {
       const pair = snippets[patternFor(patternKey)] || snippets.traversal;
@@ -600,6 +662,13 @@
     }
     document.getElementById("search").addEventListener("input", applyFilter);
     document.getElementById("filter").addEventListener("change", applyFilter);
+    document.getElementById("export-progress").addEventListener("click", exportProgress);
+    document.getElementById("import-progress").addEventListener("click", () => document.getElementById("import-file").click());
+    document.getElementById("import-file").addEventListener("change", event => {
+      const [file] = event.target.files;
+      if (file) importProgress(file);
+      event.target.value = "";
+    });
     document.getElementById("expand").addEventListener("click", () => {
       const open = ![...document.querySelectorAll(".topic")].every(x => x.open);
       document.querySelectorAll(".topic").forEach(x => x.open = open);
