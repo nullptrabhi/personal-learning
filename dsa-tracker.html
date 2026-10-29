@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>DSA Field Guide — Tracker</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #111a2e;
+      --panel-2: #17233b;
+      --line: #25334e;
+      --text: #edf3ff;
+      --muted: #9aabc5;
+      --accent: #84f0c1;
+      --blue: #93b7ff;
+      --code: #09101d;
+      --shadow: 0 18px 50px #0005;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 84% -10%, #243d5c 0, transparent 38rem),
+        radial-gradient(ellipse at -10% 12%, #183b3a 0, transparent 34rem),
+        var(--bg);
+      color: var(--text);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    a { color: var(--blue); }
+    .shell { max-width: 1240px; margin: auto; padding: 38px 24px 80px; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(230px, 310px);
+      align-items: end;
+      gap: 30px;
+      padding: 15px 0 28px;
+    }
+    .eyebrow { color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 9px 0 8px; font-size: clamp(32px, 5vw, 55px); line-height: 1.03; letter-spacing: -.045em; }
+    .intro { max-width: 650px; margin: 0; color: var(--muted); font-size: 16px; }
+    .progress-card, .toolbar, .topic, .note-card {
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--panel) 92%, transparent);
+      box-shadow: var(--shadow);
+    }
+    .progress-card { padding: 18px; border-radius: 18px; }
+    .progress-label { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; }
+    .progress-label strong { color: var(--text); font-size: 18px; }
+    .bar { height: 9px; margin-top: 12px; overflow: hidden; border-radius: 99px; background: #24314a; }
+    .bar > span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #72dfb4, #a5edb0); transition: width .25s ease; }
+    .progress-meta { display: flex; justify-content: space-between; margin-top: 9px; color: var(--muted); font-size: 12px; }
+    .toolbar {
+      position: sticky;
+      top: 10px;
+      z-index: 4;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 11px;
+      border-radius: 15px;
+      backdrop-filter: blur(16px);
+    }
+    .search-wrap { position: relative; flex: 1; min-width: 160px; }
+    .search-wrap span { position: absolute; top: 9px; left: 12px; color: var(--muted); }
+    #search {
+      width: 100%;
+      padding: 9px 12px 9px 37px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      background: #0c1424;
+      color: var(--text);
+    }
+    #search:focus { border-color: #75d9b2; box-shadow: 0 0 0 3px #75d9b222; }
+    .control {
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #142039;
+      cursor: pointer;
+    }
+    .control:hover { border-color: #526985; }
+    select.control { min-width: 125px; }
+    .topic-nav { display: flex; flex-wrap: wrap; gap: 7px; margin: 20px 0 25px; }
+    .topic-nav a {
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      background: #111a2eaa;
+      color: #b6c4d9;
+      font-size: 12px;
+      text-decoration: none;
+    }
+    .topic-nav a:hover { border-color: #5b7c87; color: var(--accent); }
+    .topic { margin: 14px 0; overflow: hidden; border-radius: 18px; }
+    .topic-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 17px 19px;
+      cursor: pointer;
+      list-style: none;
+    }
+    .topic-head::-webkit-details-marker { display: none; }
+    .topic-head::after { content: "＋"; margin-left: auto; color: var(--muted); font-size: 19px; }
+    details[open] > .topic-head::after { content: "−"; }
+    .topic-icon {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+      place-items: center;
+      border: 1px solid #476158;
+      border-radius: 12px;
+      background: #18302e;
+      font-size: 20px;
+    }
+    .topic-title { min-width: 0; }
+    .topic-title strong { display: block; font-size: 17px; }
+    .topic-title small { color: var(--muted); }
+    .topic-progress { min-width: 42px; margin-left: auto; color: var(--muted); font-size: 12px; text-align: right; }
+    details[open] > .topic-head .topic-progress { margin-left: 0; }
+    .topic-body { padding: 0 19px 20px; }
+    .subheading { margin: 16px 0 10px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .concept-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .concept {
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #0e1728;
+    }
+    .concept-top { display: flex; align-items: flex-start; gap: 10px; }
+    .check {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 17px;
+      margin: 3px 0 0;
+      accent-color: #7de1b6;
+      cursor: pointer;
+    }
+    .concept-name { flex: 1; font-weight: 680; }
+    .concept.done .concept-name { color: #92a4bc; text-decoration: line-through; }
+    .concept details { margin-top: 10px; }
+    .concept summary { color: var(--blue); cursor: pointer; font-size: 12px; font-weight: 700; }
+    .snippet-box { margin-top: 10px; overflow: hidden; border: 1px solid #263752; border-radius: 11px; background: var(--code); }
+    .snippet-toolbar { display: flex; align-items: center; gap: 6px; padding: 7px; border-bottom: 1px solid #202f47; }
+    .tab {
+      padding: 5px 9px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .tab.active { background: #233750; color: var(--accent); }
+    .copy { margin-left: auto; padding: 5px 8px; border: 1px solid #2d405b; border-radius: 7px; background: #142039; cursor: pointer; font-size: 11px; }
+    pre { max-height: 340px; margin: 0; padding: 12px; overflow: auto; color: #c9d7ea; font: 11px/1.55 "SFMono-Regular", Consolas, "Liberation Mono", monospace; tab-size: 2; }
+    .problem-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .problem {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0e1728;
+      font-size: 13px;
+    }
+    .problem a { overflow: hidden; color: #c5d6ef; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+    .problem a:hover { color: var(--accent); text-decoration: underline; }
+    .problem.done a { color: #8496ac; text-decoration: line-through; }
+    .empty { display: none; padding: 38px 15px; color: var(--muted); text-align: center; }
+    .footnote { margin-top: 18px; color: var(--muted); font-size: 12px; }
+    .reset { border-color: #68484d; color: #ffb6b6; }
+    @media (max-width: 700px) {
+      .shell { padding: 23px 14px 60px; }
+      .hero { grid-template-columns: 1fr; gap: 18px; }
+      .toolbar { top: 5px; flex-wrap: wrap; }
+      .search-wrap { flex-basis: 100%; }
+      .control { flex: 1; }
+      .concept-list, .problem-list { grid-template-columns: 1fr; }
+      .topic-body { padding-inline: 13px; }
+      .topic-head { padding-inline: 13px; }
+      .topic-progress { margin-left: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">Your practice, one pattern at a time</div>
+        <h1>DSA Field Guide</h1>
+        <p class="intro">A hands-on tracker for the full sheet: learn each sub-concept, study C++ patterns in LeetCode and Codeforces styles, and keep your progress saved on this device.</p>
+      </div>
+      <section class="progress-card" aria-label="Overall progress">
+        <div class="progress-label"><span>Overall progress</span><strong id="percent">0%</strong></div>
+        <div class="bar" role="progressbar" aria-label="Overall progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="bar"></span></div>
+        <div class="progress-meta"><span id="done-count">0 done</span><span id="total-count">0 items</span></div>
+      </section>
+    </header>
+
+    <div class="toolbar">
+      <label class="search-wrap"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Find a topic, pattern, or problem…" autocomplete="off"></label>
+      <select id="filter" class="control" aria-label="Filter checklist">
+        <option value="all">All items</option>
+        <option value="todo">Not done</option>
+        <option value="done">Completed</option>
+      </select>
+      <button id="expand" class="control" type="button">Expand all</button>
+      <button id="reset" class="control reset" type="button">Reset progress</button>
+    </div>
+    <nav id="topic-nav" class="topic-nav" aria-label="Jump to topic"></nav>
+    <section id="topics" aria-label="DSA topics"></section>
+    <p class="empty" id="empty">No matches. Try another search or filter.</p>
+    <p class="footnote">Progress is stored locally in this browser (localStorage). Code snippets are compact pattern demonstrations: adapt the signature and input/output to the exact problem statement.</p>
+  </main>
+
+  <script>
+    const topics = [
+      { title: "Arrays", icon: "▦", concepts: [
+        ["Array traversal", "traversal"], ["Two pointers", "twoPointers"], ["Sliding window", "fixedWindow"], ["Prefix sums", "prefix"],
+        ["Kadane's Algorithm", "kadane"], ["In-place modification", "inPlace"], ["Matrix traversal", "matrix"], ["Intervals", "intervals"]
+      ], problems: [
+        ["Two Sum", "https://leetcode.com/problems/two-sum/"], ["Best Time to Buy and Sell Stock", "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/"],
+        ["Product of Array Except Self", "https://leetcode.com/problems/product-of-array-except-self/"], ["Maximum Subarray", "https://leetcode.com/problems/maximum-subarray/"],
+        ["3Sum", "https://leetcode.com/problems/3sum/"], ["Container With Most Water", "https://leetcode.com/problems/container-with-most-water/"],
+        ["Subarray Sum Equals K", "https://leetcode.com/problems/subarray-sum-equals-k/"]
+      ]},
+      { title: "Strings", icon: "Aa", concepts: [
+        ["Character frequency counting", "frequency"], ["Two pointers", "twoPointers"], ["Sliding window", "stringWindow"], ["String parsing", "parse"],
+        ["Palindromes", "palindrome"], ["Anagrams", "anagram"], ["Substrings", "substring"]
+      ], problems: [
+        ["Valid Anagram", "https://leetcode.com/problems/valid-anagram/"], ["Valid Palindrome", "https://leetcode.com/problems/valid-palindrome/"],
+        ["Longest Substring Without Repeating Characters", "https://leetcode.com/problems/longest-substring-without-repeating-characters/"],
+        ["Longest Repeating Character Replacement", "https://leetcode.com/problems/longest-repeating-character-replacement/"],
+        ["Group Anagrams", "https://leetcode.com/problems/group-anagrams/"], ["Longest Palindromic Substring", "https://leetcode.com/problems/longest-palindromic-substring/"]
+      ]},
+      { title: "Linked Lists", icon: "↪", concepts: [
+        ["Traversal", "listTraversal"], ["Slow and fast pointers", "fastSlow"], ["Cycle detection", "cycleList"], ["Reversing a linked list", "reverseList"],
+        ["Merging linked lists", "mergeLists"], ["Finding the middle", "fastSlow"], ["Dummy node technique", "dummyNode"], ["Pointer manipulation", "reverseList"]
+      ], problems: [
+        ["Reverse Linked List", "https://leetcode.com/problems/reverse-linked-list/"], ["Linked List Cycle", "https://leetcode.com/problems/linked-list-cycle/"],
+        ["Middle of the Linked List", "https://leetcode.com/problems/middle-of-the-linked-list/"], ["Merge Two Sorted Lists", "https://leetcode.com/problems/merge-two-sorted-lists/"],
+        ["Remove Nth Node From End of List", "https://leetcode.com/problems/remove-nth-node-from-end-of-list/"], ["Reorder List", "https://leetcode.com/problems/reorder-list/"]
+      ]},
+      { title: "Trees and Tries", icon: "⑂", concepts: [
+        ["DFS", "treeDfs"], ["BFS / level-order traversal", "treeBfs"], ["Preorder traversal", "preorder"], ["Inorder traversal", "inorder"],
+        ["Postorder traversal", "postorder"], ["Binary Search Trees", "bst"], ["Tree height and depth", "treeDepth"],
+        ["Lowest Common Ancestor", "lca"], ["Tree construction", "treeBuild"], ["Trie insertion", "trieInsert"], ["Prefix search", "trieSearch"], ["Word search", "wordSearch"]
+      ], problems: [
+        ["Maximum Depth of Binary Tree", "https://leetcode.com/problems/maximum-depth-of-binary-tree/"], ["Invert Binary Tree", "https://leetcode.com/problems/invert-binary-tree/"],
+        ["Binary Tree Level Order Traversal", "https://leetcode.com/problems/binary-tree-level-order-traversal/"],
+        ["Validate Binary Search Tree", "https://leetcode.com/problems/validate-binary-search-tree/"],
+        ["Lowest Common Ancestor of a Binary Search Tree", "https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/"],
+        ["Diameter of Binary Tree", "https://leetcode.com/problems/diameter-of-binary-tree/"], ["Implement Trie", "https://leetcode.com/problems/implement-trie-prefix-tree/"],
+        ["Word Search II", "https://leetcode.com/problems/word-search-ii/"]
+      ]},
+      { title: "Stacks and Queues", icon: "▤", concepts: [
+        ["Stack operations", "stackOps"], ["Queue operations", "queueOps"], ["Monotonic stack", "monoStack"], ["Parentheses matching", "parentheses"],
+        ["Expression evaluation", "rpn"], ["BFS queues", "queueOps"], ["Min/max tracking", "minStack"]
+      ], problems: [
+        ["Valid Parentheses", "https://leetcode.com/problems/valid-parentheses/"], ["Min Stack", "https://leetcode.com/problems/min-stack/"],
+        ["Evaluate Reverse Polish Notation", "https://leetcode.com/problems/evaluate-reverse-polish-notation/"], ["Daily Temperatures", "https://leetcode.com/problems/daily-temperatures/"],
+        ["Largest Rectangle in Histogram", "https://leetcode.com/problems/largest-rectangle-in-histogram/"], ["Implement Queue Using Stacks", "https://leetcode.com/problems/implement-queue-using-stacks/"]
+      ]},
+      { title: "Graphs", icon: "◉", concepts: [
+        ["Graph representation", "graphRep"], ["Adjacency lists", "graphRep"], ["BFS", "graphBfs"], ["DFS", "graphDfs"], ["Connected components", "components"],
+        ["Cycle detection", "graphCycle"], ["Topological sort", "topo"], ["Shortest path", "unweightedPath"], ["Multi-source BFS", "multiBfs"],
+        ["Union Find", "unionFind"], ["Dijkstra's Algorithm", "dijkstra"]
+      ], problems: [
+        ["Number of Islands", "https://leetcode.com/problems/number-of-islands/"], ["Clone Graph", "https://leetcode.com/problems/clone-graph/"],
+        ["Course Schedule", "https://leetcode.com/problems/course-schedule/"], ["Rotting Oranges", "https://leetcode.com/problems/rotting-oranges/"],
+        ["Pacific Atlantic Water Flow", "https://leetcode.com/problems/pacific-atlantic-water-flow/"], ["Network Delay Time", "https://leetcode.com/problems/network-delay-time/"],
+        ["Redundant Connection", "https://leetcode.com/problems/redundant-connection/"], ["Word Ladder", "https://leetcode.com/problems/word-ladder/"]
+      ]},
+      { title: "Dynamic Programming and Recursion", icon: "↗", concepts: [
+        ["Base cases", "baseCase"], ["Recursive calls", "recursion"], ["Backtracking", "backtrack"], ["Subsets", "subsets"],
+        ["Permutations", "permutations"], ["Combinations", "combinations"], ["Memoization", "memo"], ["Tabulation", "tabulation"],
+        ["1D DP", "dp1d"], ["2D DP", "dp2d"], ["Knapsack", "knapsack"], ["Subsequences", "subsequence"], ["State transitions", "transition"]
+      ], problems: [
+        ["Climbing Stairs", "https://leetcode.com/problems/climbing-stairs/"], ["House Robber", "https://leetcode.com/problems/house-robber/"],
+        ["Coin Change", "https://leetcode.com/problems/coin-change/"], ["Longest Increasing Subsequence", "https://leetcode.com/problems/longest-increasing-subsequence/"],
+        ["Longest Common Subsequence", "https://leetcode.com/problems/longest-common-subsequence/"], ["Unique Paths", "https://leetcode.com/problems/unique-paths/"],
+        ["Subsets", "https://leetcode.com/problems/subsets/"], ["Permutations", "https://leetcode.com/problems/permutations/"],
+        ["Combination Sum", "https://leetcode.com/problems/combination-sum/"]
+      ]},
+      { title: "Heaps", icon: "⌑", concepts: [
+        ["Min heap", "minHeap"], ["Max heap", "maxHeap"], ["Top K elements", "topK"], ["Kth largest / smallest", "kthHeap"],
+        ["Running median", "medianHeap"], ["Merging sorted data", "mergeHeap"], ["Two-heap pattern", "medianHeap"]
+      ], problems: [
+        ["Kth Largest Element in an Array", "https://leetcode.com/problems/kth-largest-element-in-an-array/"], ["Top K Frequent Elements", "https://leetcode.com/problems/top-k-frequent-elements/"],
+        ["K Closest Points to Origin", "https://leetcode.com/problems/k-closest-points-to-origin/"], ["Merge K Sorted Lists", "https://leetcode.com/problems/merge-k-sorted-lists/"],
+        ["Find Median from Data Stream", "https://leetcode.com/problems/find-median-from-data-stream/"], ["Task Scheduler", "https://leetcode.com/problems/task-scheduler/"]
+      ]},
+      { title: "Hashing", icon: "#", concepts: [
+        ["HashMaps", "hashMap"], ["HashSets", "hashSet"], ["Frequency counting", "frequency"], ["Duplicate detection", "hashSet"],
+        ["Value-to-index mapping", "valueIndex"], ["Grouping", "grouping"], ["Prefix sum + hashmap", "prefixHash"], ["Caching previously seen values", "hashMap"]
+      ], problems: [
+        ["Two Sum", "https://leetcode.com/problems/two-sum/"], ["Contains Duplicate", "https://leetcode.com/problems/contains-duplicate/"],
+        ["Valid Anagram", "https://leetcode.com/problems/valid-anagram/"], ["Group Anagrams", "https://leetcode.com/problems/group-anagrams/"],
+        ["Longest Consecutive Sequence", "https://leetcode.com/problems/longest-consecutive-sequence/"], ["Subarray Sum Equals K", "https://leetcode.com/problems/subarray-sum-equals-k/"]
+      ]},
+      { title: "Bit Manipulation", icon: "01", concepts: [
+        ["AND", "bitAnd"], ["OR", "bitOr"], ["XOR", "bitXor"], ["NOT", "bitNot"], ["Left shift", "leftShift"], ["Right shift", "rightShift"],
+        ["Checking bits", "checkBit"], ["Setting bits", "setBit"], ["Clearing bits", "clearBit"], ["XOR cancellation", "bitXor"], ["Counting set bits", "popcount"]
+      ], problems: [
+        ["Single Number", "https://leetcode.com/problems/single-number/"], ["Number of 1 Bits", "https://leetcode.com/problems/number-of-1-bits/"],
+        ["Counting Bits", "https://leetcode.com/problems/counting-bits/"], ["Reverse Bits", "https://leetcode.com/problems/reverse-bits/"],
+        ["Missing Number", "https://leetcode.com/problems/missing-number/"], ["Sum of Two Integers", "https://leetcode.com/problems/sum-of-two-integers/"]
+      ]},
+      { title: "Sorting", icon: "⇅", concepts: [
+        ["Bubble Sort", "bubbleSort"], ["Selection Sort", "selectionSort"], ["Insertion Sort", "insertionSort"], ["Merge Sort", "mergeSort"],
+        ["Quick Sort", "quickSort"], ["Counting Sort", "countingSort"], ["Bucket Sort", "bucketSort"], ["Custom comparators", "comparator"], ["Interval sorting", "intervalSort"]
+      ], problems: [
+        ["Sort an Array", "https://leetcode.com/problems/sort-an-array/"], ["Merge Intervals", "https://leetcode.com/problems/merge-intervals/"],
+        ["Insert Interval", "https://leetcode.com/problems/insert-interval/"], ["Meeting Rooms II", "https://leetcode.com/problems/meeting-rooms-ii/"],
+        ["Largest Number", "https://leetcode.com/problems/largest-number/"]
+      ]},
+      { title: "Searching", icon: "⌕", concepts: [
+        ["Linear search", "linearSearch"], ["Binary search", "binarySearch"], ["Binary search on sorted arrays", "binarySearch"],
+        ["Binary search on answer", "answerSearch"], ["Rotated arrays", "rotatedSearch"], ["Lower bound", "lowerBound"],
+        ["Upper bound", "upperBound"], ["Matrix search", "matrixSearch"]
+      ], problems: [
+        ["Binary Search", "https://leetcode.com/problems/binary-search/"], ["Search in Rotated Sorted Array", "https://leetcode.com/problems/search-in-rotated-sorted-array/"],
+        ["Find Minimum in Rotated Sorted Array", "https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/"],
+        ["Search a 2D Matrix", "https://leetcode.com/problems/search-a-2d-matrix/"], ["Koko Eating Bananas", "https://leetcode.com/problems/koko-eating-bananas/"],
+        ["Find First and Last Position of Element in Sorted Array", "https://leetcode.com/problems/find-first-and-last-position-of-element-in-sorted-array"]
+      ]}
+    ];
+
+    const snippets = {
+      traversal: ["long long sumArray(vector<int>& a) {\n  long long sum = 0;\n  for (int x : a) sum += x;\n  return sum;\n}", "vector<int> a = {2, 4, 6};\nlong long sum = 0;\nfor (int x : a) sum += x;\ncout << sum << '\\n';"],
+      twoPointers: ["bool hasPair(vector<int>& a, int target) {\n  int l = 0, r = (int)a.size() - 1;\n  while (l < r) {\n    int sum = a[l] + a[r];\n    if (sum == target) return true;\n    (sum < target) ? ++l : --r;\n  }\n  return false;\n}", "int n, target; cin >> n >> target;\nvector<int> a(n); for (int& x : a) cin >> x;\nsort(a.begin(), a.end());\nint l = 0, r = n - 1; bool found = false;\nwhile (l < r) { int s = a[l] + a[r]; if (s == target) { found = true; break; } if (s < target) ++l; else --r; }\ncout << (found ? \"YES\" : \"NO\") << '\\n';"],
+      fixedWindow: ["int maxWindowSum(vector<int>& a, int k) {\n  long long window = 0;\n  for (int i = 0; i < k; ++i) window += a[i];\n  long long best = window;\n  for (int r = k; r < (int)a.size(); ++r) {\n    window += a[r] - a[r - k];\n    best = max(best, window);\n  }\n  return (int)best;\n}", "int n, k; cin >> n >> k;\nvector<int> a(n); for (int& x : a) cin >> x;\nlong long window = 0; for (int i = 0; i < k; ++i) window += a[i];\nlong long best = window;\nfor (int r = k; r < n; ++r) { window += a[r] - a[r-k]; best = max(best, window); }\ncout << best << '\\n';"],
+      prefix: ["vector<int> prefixSums(vector<int>& a) {\n  vector<int> p(a.size() + 1);\n  for (int i = 0; i < (int)a.size(); ++i) p[i + 1] = p[i] + a[i];\n  return p; // sum [l,r) = p[r] - p[l]\n}", "int n, q; cin >> n >> q;\nvector<long long> p(n + 1);\nfor (int i = 1, x; i <= n; ++i) { cin >> x; p[i] = p[i-1] + x; }\nwhile (q--) { int l, r; cin >> l >> r; cout << p[r] - p[l-1] << '\\n'; }"],
+      kadane: ["int maxSubArray(vector<int>& a) {\n  int best = a[0], ending = a[0];\n  for (int i = 1; i < (int)a.size(); ++i) {\n    ending = max(a[i], ending + a[i]);\n    best = max(best, ending);\n  }\n  return best;\n}", "int n; cin >> n; long long x, ending, best;\nfor (int i = 0; i < n; ++i) { cin >> x; if (i == 0) ending = best = x; else { ending = max(x, ending + x); best = max(best, ending); } }\ncout << best << '\\n';"],
+      inPlace: ["int removeDuplicates(vector<int>& a) {\n  int write = 0;\n  for (int x : a)\n    if (write == 0 || a[write - 1] != x) a[write++] = x;\n  return write; // valid prefix is [0, write)\n}", "int n; cin >> n; vector<int> a(n); for (int& x : a) cin >> x;\nint write = 0;\nfor (int x : a) if (write == 0 || a[write-1] != x) a[write++] = x;\na.resize(write); for (int x : a) cout << x << ' '; cout << '\\n';"],
+      matrix: ["int sumMatrix(vector<vector<int>>& a) {\n  int sum = 0;\n  for (int r = 0; r < (int)a.size(); ++r)\n    for (int c = 0; c < (int)a[r].size(); ++c) sum += a[r][c];\n  return sum;\n}", "int n, m; cin >> n >> m; long long sum = 0;\nfor (int r = 0, x; r < n; ++r) for (int c = 0; c < m; ++c) { cin >> x; sum += x; }\ncout << sum << '\\n';"],
+      intervals: ["vector<vector<int>> merge(vector<vector<int>>& a) {\n  sort(a.begin(), a.end());\n  vector<vector<int>> out;\n  for (auto& x : a) {\n    if (out.empty() || out.back()[1] < x[0]) out.push_back(x);\n    else out.back()[1] = max(out.back()[1], x[1]);\n  }\n  return out;\n}", "int n; cin >> n; vector<pair<int,int>> a(n);\nfor (auto& [l,r] : a) cin >> l >> r; sort(a.begin(), a.end());\nvector<pair<int,int>> out;\nfor (auto [l,r] : a) { if (out.empty() || out.back().second < l) out.push_back({l,r}); else out.back().second = max(out.back().second, r); }\nfor (auto [l,r] : out) cout << l << ' ' << r << '\\n';"],
+      frequency: ["bool isAnagram(string a, string b) {\n  if (a.size() != b.size()) return false;\n  array<int, 26> count{};\n  for (char c : a) ++count[c - 'a'];\n  for (char c : b) if (--count[c - 'a'] < 0) return false;\n  return true;\n}", "string s; cin >> s; array<int, 26> freq{};\nfor (char c : s) ++freq[c - 'a'];\nfor (int i = 0; i < 26; ++i) if (freq[i]) cout << char('a' + i) << ':' << freq[i] << '\\n';"],
+      stringWindow: ["int longestUnique(string s) {\n  vector<int> last(256, -1); int left = 0, best = 0;\n  for (int r = 0; r < (int)s.size(); ++r) {\n    left = max(left, last[(unsigned char)s[r]] + 1);\n    last[(unsigned char)s[r]] = r;\n    best = max(best, r - left + 1);\n  }\n  return best;\n}", "string s; cin >> s; vector<int> last(256, -1); int left = 0, best = 0;\nfor (int r = 0; r < (int)s.size(); ++r) { left = max(left, last[(unsigned char)s[r]] + 1); last[(unsigned char)s[r]] = r; best = max(best, r-left+1); }\ncout << best << '\\n';"],
+      parse: ["int parsePositive(string s) {\n  int value = 0;\n  for (char c : s) {\n    if (!isdigit((unsigned char)c)) return -1;\n    value = value * 10 + (c - '0');\n  }\n  return value;\n}", "string s; cin >> s; long long value = 0; bool valid = true;\nfor (char c : s) { if (!isdigit((unsigned char)c)) { valid = false; break; } value = value * 10 + c - '0'; }\ncout << (valid ? to_string(value) : \"INVALID\") << '\\n';"],
+      palindrome: ["bool isPalindrome(string s) {\n  int l = 0, r = (int)s.size() - 1;\n  while (l < r) {\n    if (s[l] != s[r]) return false;\n    ++l; --r;\n  }\n  return true;\n}", "string s; cin >> s; int l = 0, r = (int)s.size()-1; bool ok = true;\nwhile (l < r) if (s[l++] != s[r--]) { ok = false; break; }\ncout << (ok ? \"YES\" : \"NO\") << '\\n';"],
+      anagram: ["string keyForAnagram(string s) {\n  sort(s.begin(), s.end());\n  return s; // use as unordered_map key\n}", "int n; cin >> n; unordered_map<string,int> groups;\nwhile (n--) { string s; cin >> s; sort(s.begin(), s.end()); ++groups[s]; }\ncout << groups.size() << '\\n';"],
+      substring: ["int countSubstrings(string s, string target) {\n  int count = 0;\n  for (size_t pos = s.find(target); pos != string::npos; pos = s.find(target, pos + 1)) ++count;\n  return count;\n}", "string s, t; cin >> s >> t; int count = 0;\nfor (size_t p = s.find(t); p != string::npos; p = s.find(t, p + 1)) ++count;\ncout << count << '\\n';"],
+      listTraversal: ["int listLength(ListNode* head) {\n  int n = 0;\n  for (auto* p = head; p; p = p->next) ++n;\n  return n;\n}", "struct Node { int val; Node* next; };\nint main() { Node a{1, nullptr}, b{2, nullptr}; a.next = &b;\nint n = 0; for (Node* p = &a; p; p = p->next) ++n;\ncout << n << '\\n'; }"],
+      fastSlow: ["ListNode* middleNode(ListNode* head) {\n  ListNode *slow = head, *fast = head;\n  while (fast && fast->next) {\n    slow = slow->next;\n    fast = fast->next->next;\n  }\n  return slow;\n}", "struct Node { int val; Node* next; };\n// Move slow by 1 and fast by 2; when fast reaches the end, slow is at the middle.\nNode* middle(Node* head) { Node *s=head, *f=head; while (f && f->next) { s=s->next; f=f->next->next; } return s; }"],
+      reverseList: ["ListNode* reverseList(ListNode* head) {\n  ListNode *prev = nullptr, *cur = head;\n  while (cur) {\n    ListNode* next = cur->next;\n    cur->next = prev; prev = cur; cur = next;\n  }\n  return prev;\n}", "struct Node { int val; Node* next; };\nNode* reverse(Node* head) { Node *p=nullptr, *c=head; while (c) { Node* n=c->next; c->next=p; p=c; c=n; } return p; }\nint main() { return 0; }"],
+      cycleList: ["bool hasCycle(ListNode* head) {\n  ListNode *slow = head, *fast = head;\n  while (fast && fast->next) {\n    slow = slow->next; fast = fast->next->next;\n    if (slow == fast) return true;\n  }\n  return false;\n}", "struct Node { int val; Node* next; };\nbool hasCycle(Node* h) { Node *s=h,*f=h; while (f && f->next) { s=s->next; f=f->next->next; if (s==f) return true; } return false; }\nint main() { return 0; }"],
+      mergeLists: ["ListNode* mergeTwoLists(ListNode* a, ListNode* b) {\n  ListNode dummy(0), *tail = &dummy;\n  while (a && b) { if (a->val < b->val) { tail->next=a; a=a->next; } else { tail->next=b; b=b->next; } tail=tail->next; }\n  tail->next = a ? a : b;\n  return dummy.next;\n}", "struct Node { int val; Node* next; };\n// Keep a dummy head; repeatedly append the smaller current node from the two sorted lists.\nNode* merge(Node* a, Node* b) { Node dummy{0,nullptr}, *t=&dummy; while(a&&b){ if(a->val<b->val){t->next=a;a=a->next;}else{t->next=b;b=b->next;} t=t->next; } t->next=a?a:b; return dummy.next; }"],
+      dummyNode: ["ListNode* removeHeadMatch(ListNode* head, int value) {\n  ListNode dummy(0); dummy.next = head;\n  ListNode* p = &dummy;\n  while (p->next && p->next->val != value) p = p->next;\n  if (p->next) p->next = p->next->next;\n  return dummy.next;\n}", "struct Node { int val; Node* next; };\nNode* eraseFirst(Node* head, int x) { Node dummy{0,head}; Node* p=&dummy; while(p->next&&p->next->val!=x)p=p->next; if(p->next)p->next=p->next->next; return dummy.next; }\nint main() { return 0; }"],
+      treeDfs: ["int maxDepth(TreeNode* root) {\n  if (!root) return 0;\n  return 1 + max(maxDepth(root->left), maxDepth(root->right));\n}", "struct Node { int val; Node *left,*right; };\nint dfs(Node* u) { if (!u) return 0; return 1 + max(dfs(u->left), dfs(u->right)); }\nint main() { return 0; }"],
+      treeBfs: ["vector<vector<int>> levelOrder(TreeNode* root) {\n  vector<vector<int>> ans; if (!root) return ans;\n  queue<TreeNode*> q; q.push(root);\n  while (!q.empty()) { int n=q.size(); vector<int> row;\n    while (n--) { auto* u=q.front(); q.pop(); row.push_back(u->val); if(u->left) q.push(u->left); if(u->right) q.push(u->right); }\n    ans.push_back(row);\n  } return ans;\n}", "int n; cin >> n; vector<vector<int>> g(n); for (int i=0,u,v;i<n-1;++i) { cin>>u>>v; --u;--v;g[u].push_back(v);g[v].push_back(u); }\nqueue<int> q; vector<int> d(n,-1); q.push(0); d[0]=0;\nwhile(!q.empty()){int u=q.front();q.pop();for(int v:g[u])if(d[v]<0){d[v]=d[u]+1;q.push(v);}}\nfor(int x:d) cout<<x<<' ';"],
+      preorder: ["void preorder(TreeNode* u, vector<int>& out) {\n  if (!u) return;\n  out.push_back(u->val);\n  preorder(u->left, out); preorder(u->right, out);\n}", "void dfs(int u, vector<vector<int>>& g, vector<int>& out, vector<int>& seen) { seen[u]=1; out.push_back(u); for(int v:g[u]) if(!seen[v]) dfs(v,g,out,seen); }\n// Record a node on entry: preorder."],
+      inorder: ["void inorder(TreeNode* u, vector<int>& out) {\n  if (!u) return;\n  inorder(u->left, out); out.push_back(u->val); inorder(u->right, out);\n}", "void inorder(int u, vector<int>& left, vector<int>& right, vector<int>& out) { if(u<0)return; inorder(left[u],left,right,out); out.push_back(u); inorder(right[u],left,right,out); }\n// For a BST, this visits values in sorted order."],
+      postorder: ["void postorder(TreeNode* u, vector<int>& out) {\n  if (!u) return;\n  postorder(u->left, out); postorder(u->right, out); out.push_back(u->val);\n}", "void dfs(int u, vector<vector<int>>& g, int p, vector<int>& out) { for(int v:g[u]) if(v!=p) dfs(v,g,u,out); out.push_back(u); }\n// Record a node after processing its children: postorder."],
+      bst: ["bool searchBST(TreeNode* u, int x) {\n  while (u && u->val != x)\n    u = (x < u->val) ? u->left : u->right;\n  return u != nullptr;\n}", "int n, x; cin >> n >> x; set<int> bst;\nwhile(n--){int v;cin>>v;bst.insert(v);}\nauto it=bst.lower_bound(x); cout << (it!=bst.end() && *it==x ? \"YES\" : \"NO\") << '\\n';"],
+      lca: ["TreeNode* lca(TreeNode* u, TreeNode* p, TreeNode* q) {\n  if (!u || u == p || u == q) return u;\n  auto* l = lca(u->left, p, q); auto* r = lca(u->right, p, q);\n  if (l && r) return u;\n  return l ? l : r;\n}", "int n,a,b;cin>>n>>a>>b;--a;--b;vector<vector<int>>g(n);for(int i=1,u,v;i<n;++i){cin>>u>>v;--u;--v;g[u].push_back(v);g[v].push_back(u);}\nvector<int>p(n,-1);function<void(int,int)>dfs=[&](int u,int par){p[u]=par;for(int v:g[u])if(v!=par)dfs(v,u);};dfs(0,-1);\nset<int>anc;for(int u=a;u!=-1;u=p[u])anc.insert(u);while(!anc.count(b))b=p[b];cout<<b+1<<'\\n';"],
+      treeBuild: ["TreeNode* build(int l, int r, vector<int>& a) {\n  if (l >= r) return nullptr;\n  int m = l + (r-l)/2;\n  TreeNode* u = new TreeNode(a[m]);\n  u->left = build(l,m,a); u->right = build(m+1,r,a);\n  return u;\n}", "struct Node{int val;Node *left=nullptr,*right=nullptr;Node(int x):val(x){}};\nNode* build(int l,int r,vector<int>&a){if(l>=r)return nullptr;int m=(l+r)/2;Node*u=new Node(a[m]);u->left=build(l,m,a);u->right=build(m+1,r,a);return u;}\nint main(){int n;cin>>n;vector<int>a(n);for(int&x:a)cin>>x;Node*root=build(0,n,a);cout<<(root?root->val:-1)<<'\\n';}"],
+      trieInsert: ["struct TrieNode { TrieNode* next[26]{}; bool end=false; };\nvoid insert(TrieNode* root, string& s) {\n  for (char c : s) { int i=c-'a'; if(!root->next[i]) root->next[i]=new TrieNode(); root=root->next[i]; }\n  root->end=true;\n}", "struct Node { int next[26]; bool end=false; Node(){ fill(next,next+26,-1); } };\nvector<Node> trie(1);\nstring s; cin >> s; int u=0;\nfor(char c:s){int x=c-'a';if(trie[u].next[x]<0){trie[u].next[x]=trie.size();trie.emplace_back();}u=trie[u].next[x];} trie[u].end=true;"],
+      trieSearch: ["struct TrieNode { TrieNode* next[26]{}; };\nbool startsWith(TrieNode* root, string& s) {\n  for (char c : s) { root=root->next[c-'a']; if(!root) return false; }\n  return true;\n}", "struct Node{int next[26];Node(){fill(next,next+26,-1);}};vector<Node>trie(1);int q;cin>>q;\nwhile(q--){string s;cin>>s;int u=0;for(char c:s){int x=c-'a';if(trie[u].next[x]<0){trie[u].next[x]=trie.size();trie.emplace_back();}u=trie[u].next[x];}}\nstring p;cin>>p;int u=0;bool ok=true;for(char c:p){int x=c-'a';if(trie[u].next[x]<0){ok=false;break;}u=trie[u].next[x];}cout<<(ok?\"YES\":\"NO\")<<'\\n';"],
+      wordSearch: ["bool dfs(vector<vector<char>>& b, string& w, int r, int c, int i) {\n  if (i == (int)w.size()) return true;\n  if (r<0||c<0||r>=b.size()||c>=b[0].size()||b[r][c]!=w[i]) return false;\n  char save=b[r][c]; b[r][c]='#';\n  bool ok=dfs(b,w,r+1,c,i+1)||dfs(b,w,r-1,c,i+1)||dfs(b,w,r,c+1,i+1)||dfs(b,w,r,c-1,i+1);\n  b[r][c]=save; return ok;\n}", "int n,m;cin>>n>>m;vector<string>g(n);for(auto&row:g)cin>>row;string w;cin>>w;int dr[]={1,-1,0,0},dc[]={0,0,1,-1};\nfunction<bool(int,int,int)>dfs=[&](int r,int c,int i){if(i==(int)w.size())return true;if(r<0||c<0||r>=n||c>=m||g[r][c]!=w[i])return false;char old=g[r][c];g[r][c]='#';bool ok=false;for(int k=0;k<4;++k)ok=ok||dfs(r+dr[k],c+dc[k],i+1);g[r][c]=old;return ok;};\nbool found=false;for(int r=0;r<n;++r)for(int c=0;c<m;++c)found=found||dfs(r,c,0);cout<<(found?\"YES\":\"NO\")<<'\\n';"],
+      stackOps: ["vector<int> reverseWithStack(vector<int>& a) {\n  stack<int> st; for (int x : a) st.push(x);\n  vector<int> out;\n  while (!st.empty()) { out.push_back(st.top()); st.pop(); }\n  return out;\n}", "int n; cin >> n; stack<int> st;\nwhile(n--){string op;cin>>op;if(op==\"push\"){int x;cin>>x;st.push(x);}else if(!st.empty()){cout<<st.top()<<' ';st.pop();}}"],
+      queueOps: ["vector<int> bfsOrder(vector<vector<int>>& g, int start) {\n  vector<int> out; vector<char> seen(g.size()); queue<int> q;\n  q.push(start); seen[start]=1;\n  while(!q.empty()){int u=q.front();q.pop();out.push_back(u);for(int v:g[u])if(!seen[v])seen[v]=1,q.push(v);}\n  return out;\n}", "int q; cin >> q; queue<int> line;\nwhile(q--){int type;cin>>type;if(type==1){int x;cin>>x;line.push(x);}else if(!line.empty()){cout<<line.front()<<'\\n';line.pop();}}"],
+      monoStack: ["vector<int> nextWarmer(vector<int>& t) {\n  vector<int> ans(t.size()); stack<int> st;\n  for(int i=0;i<(int)t.size();++i){\n    while(!st.empty() && t[i]>t[st.top()]){ans[st.top()]=i-st.top();st.pop();}\n    st.push(i);\n  } return ans;\n}", "int n;cin>>n;vector<int>a(n),ans(n);for(int&x:a)cin>>x;stack<int> st;\nfor(int i=0;i<n;++i){while(!st.empty()&&a[i]>a[st.top()]){ans[st.top()]=i-st.top();st.pop();}st.push(i);}\nfor(int x:ans)cout<<x<<' ';"],
+      parentheses: ["bool valid(string s) {\n  stack<char> st;\n  for(char c:s){\n    if(c=='('||c=='['||c=='{') st.push(c);\n    else { if(st.empty()) return false; char o=st.top();st.pop();\n      if((c==')'&&o!='(')||(c==']'&&o!='[')||(c=='}'&&o!='{')) return false; }\n  } return st.empty();\n}", "string s;cin>>s;stack<char> st;bool ok=true;\nfor(char c:s){if(c=='('||c=='['||c=='{')st.push(c);else if(st.empty())ok=false;else{char o=st.top();st.pop();if((c==')'&&o!='(')||(c==']'&&o!='[')||(c=='}'&&o!='{'))ok=false;}}\ncout << (ok&&st.empty()?\"YES\":\"NO\") << '\\n';"],
+      rpn: ["int evalRPN(vector<string>& t) {\n  stack<long long> st;\n  for(auto& x:t){\n    if(x==\"+\"||x==\"-\"||x==\"*\"||x==\"/\"){long long b=st.top();st.pop();long long a=st.top();st.pop();\n      if(x==\"+\")st.push(a+b);else if(x==\"-\")st.push(a-b);else if(x==\"*\")st.push(a*b);else st.push(a/b);\n    } else st.push(stoll(x));\n  } return (int)st.top();\n}", "int n;cin>>n;stack<long long>st;while(n--){string x;cin>>x;if(x==\"+\"||x==\"-\"||x==\"*\"||x==\"/\"){long long b=st.top();st.pop();long long a=st.top();st.pop();if(x==\"+\")st.push(a+b);else if(x==\"-\")st.push(a-b);else if(x==\"*\")st.push(a*b);else st.push(a/b);}else st.push(stoll(x));}cout<<st.top()<<'\\n';"],
+      minStack: ["class MinStack {\n  stack<pair<int,int>> st;\npublic:\n  void push(int x){st.push({x, st.empty()?x:min(x,st.top().second)});}\n  void pop(){st.pop();}\n  int top(){return st.top().first;}\n  int getMin(){return st.top().second;}\n};", "int q;cin>>q;stack<pair<int,int>> st;\nwhile(q--){string op;cin>>op;if(op==\"push\"){int x;cin>>x;st.push({x,st.empty()?x:min(x,st.top().second)});}else if(op==\"min\")cout<<st.top().second<<'\\n';else st.pop();}"],
+      graphRep: ["vector<vector<int>> buildGraph(int n, vector<vector<int>>& edges) {\n  vector<vector<int>> g(n);\n  for(auto& e:edges){int u=e[0],v=e[1];g[u].push_back(v);g[v].push_back(u);}\n  return g;\n}", "int n,m;cin>>n>>m;vector<vector<int>> g(n);\nwhile(m--){int u,v;cin>>u>>v;--u;--v;g[u].push_back(v);g[v].push_back(u);}\nfor(int u=0;u<n;++u){cout<<u+1<<\":\";for(int v:g[u])cout<<' '<<v+1;cout<<'\\n';}"],
+      graphBfs: ["vector<int> bfs(vector<vector<int>>& g, int s) {\n  vector<int> d(g.size(),-1); queue<int> q; d[s]=0;q.push(s);\n  while(!q.empty()){int u=q.front();q.pop();for(int v:g[u])if(d[v]<0)d[v]=d[u]+1,q.push(v);}\n  return d;\n}", "int n,m,s;cin>>n>>m>>s;--s;vector<vector<int>>g(n);while(m--){int u,v;cin>>u>>v;--u;--v;g[u].push_back(v);g[v].push_back(u);}\nvector<int>d(n,-1);queue<int>q;d[s]=0;q.push(s);while(!q.empty()){int u=q.front();q.pop();for(int v:g[u])if(d[v]<0)d[v]=d[u]+1,q.push(v);}\nfor(int x:d)cout<<x<<' ';"],
+      graphDfs: ["void dfs(int u, vector<vector<int>>& g, vector<char>& seen) {\n  seen[u]=1;\n  for(int v:g[u]) if(!seen[v]) dfs(v,g,seen);\n}", "int n,m;cin>>n>>m;vector<vector<int>>g(n);while(m--){int u,v;cin>>u>>v;--u;--v;g[u].push_back(v);g[v].push_back(u);}\nvector<char>seen(n);function<void(int)>dfs=[&](int u){seen[u]=1;for(int v:g[u])if(!seen[v])dfs(v);};\ndfs(0);cout<<count(seen.begin(),seen.end(),1)<<'\\n';"],
+      components: ["int countComponents(vector<vector<int>>& g) {\n  vector<char> seen(g.size()); int count=0;\n  function<void(int)> dfs=[&](int u){seen[u]=1;for(int v:g[u])if(!seen[v])dfs(v);};\n  for(int i=0;i<(int)g.size();++i)if(!seen[i])++count,dfs(i);\n  return count;\n}", "int n,m;cin>>n>>m;vector<vector<int>>g(n);while(m--){int u,v;cin>>u>>v;--u;--v;g[u].push_back(v);g[v].push_back(u);}\nvector<char>seen(n);int parts=0;for(int s=0;s<n;++s)if(!seen[s]){++parts;queue<int>q;q.push(s);seen[s]=1;while(!q.empty()){int u=q.front();q.pop();for(int v:g[u])if(!seen[v])seen[v]=1,q.push(v);}}\ncout<<parts<<'\\n';"],
+      graphCycle: ["bool hasCycle(int u,int parent,vector<vector<int>>&g,vector<char>&seen){\n  seen[u]=1;\n  for(int v:g[u]){if(!seen[v]){if(hasCycle(v,u,g,seen))return true;}else if(v!=parent)return true;}\n  return false;\n}", "int n,m;cin>>n>>m;vector<vector<int>>g(n);while(m--){int u,v;cin>>u>>v;--u;--v;g[u].push_back(v);g[v].push_back(u);}\nvector<int>p(n,-1);queue<int>q;q.push(0);p[0]=0;bool cyc=false;while(!q.empty()){int u=q.front();q.pop();for(int v:g[u])if(p[v]<0)p[v]=u,q.push(v);else if(p[u]!=v)cyc=true;}\ncout<<(cyc?\"YES\":\"NO\")<<'\\n';"],
+      topo: ["vector<int> topoSort(vector<vector<int>>& g) {\n  vector<int> in(g.size()), order;\n  for(auto& row:g)for(int v:row)++in[v];\n  queue<int> q;for(int i=0;i<(int)g.size();++i)if(!in[i])q.push(i);\n  while(!q.empty()){int u=q.front();q.pop();order.push_back(u);for(int v:g[u])if(--in[v]==0)q.push(v);}\n  if(order.size()!=g.size()) return {}; return order;\n}", "int n,m;cin>>n>>m;vector<vector<int>>g(n);vector<int>in(n);while(m--){int u,v;cin>>u>>v;--u;--v;g[u].push_back(v);++in[v];}\nqueue<int>q;for(int i=0;i<n;++i)if(!in[i])q.push(i);vector<int>ord;while(!q.empty()){int u=q.front();q.pop();ord.push_back(u);for(int v:g[u])if(--in[v]==0)q.push(v);}\nif((int)ord.size()!=n)cout<<\"IMPOSSIBLE\\n\";else for(int u:ord)cout<<u+1<<' ';"],
+      unweightedPath: ["vector<int> distances(vector<vector<int>>& g, int s) {\n  vector<int> d(g.size(),-1); queue<int> q; d[s]=0;q.push(s);\n  while(!q.empty()){int u=q.front();q.pop();for(int v:g[u])if(d[v]<0)d[v]=d[u]+1,q.push(v);}\n  return d;\n}", "int n,m,s;cin>>n>>m>>s;--s;vector<vector<int>>g(n);while(m--){int u,v;cin>>u>>v;--u;--v;g[u].push_back(v);g[v].push_back(u);}\nvector<int>d(n,-1);queue<int>q;d[s]=0;q.push(s);while(!q.empty()){int u=q.front();q.pop();for(int v:g[u])if(d[v]<0)d[v]=d[u]+1,q.push(v);}\nfor(int x:d)cout<<x<<' ';"],
+      multiBfs: ["vector<vector<int>> gridDistances(vector<vector<int>>& a) {\n  int n=a.size(),m=a[0].size();vector<vector<int>>d(n,vector<int>(m,-1));queue<pair<int,int>>q;\n  for(int r=0;r<n;++r)for(int c=0;c<m;++c)if(a[r][c]==0)d[r][c]=0,q.push({r,c});\n  int dr[]={1,-1,0,0},dc[]={0,0,1,-1};\n  while(!q.empty()){auto [r,c]=q.front();q.pop();for(int k=0;k<4;++k){int x=r+dr[k],y=c+dc[k];if(x>=0&&y>=0&&x<n&&y<m&&d[x][y]<0)d[x][y]=d[r][c]+1,q.push({x,y});}}\n  return d;\n}", "int n,m;cin>>n>>m;vector<string>g(n);for(auto&s:g)cin>>s;vector<vector<int>>d(n,vector<int>(m,-1));queue<pair<int,int>>q;\nfor(int r=0;r<n;++r)for(int c=0;c<m;++c)if(g[r][c]=='0')d[r][c]=0,q.push({r,c});\nint dr[]={1,-1,0,0},dc[]={0,0,1,-1};while(!q.empty()){auto[r,c]=q.front();q.pop();for(int k=0;k<4;++k){int x=r+dr[k],y=c+dc[k];if(x>=0&&y>=0&&x<n&&y<m&&d[x][y]<0)d[x][y]=d[r][c]+1,q.push({x,y});}}\nfor(auto&row:d){for(int x:row)cout<<x<<' ';cout<<'\\n';}"],
+      unionFind: ["struct DSU {\n  vector<int> p, size;\n  DSU(int n):p(n),size(n,1){iota(p.begin(),p.end(),0);}\n  int find(int x){return p[x]==x?x:p[x]=find(p[x]);}\n  bool unite(int a,int b){a=find(a);b=find(b);if(a==b)return false;if(size[a]<size[b])swap(a,b);p[b]=a;size[a]+=size[b];return true;}\n};", "int n,m;cin>>n>>m;vector<int>p(n),sz(n,1);iota(p.begin(),p.end(),0);\nfunction<int(int)>find=[&](int x){return p[x]==x?x:p[x]=find(p[x]);};\nwhile(m--){int a,b;cin>>a>>b;--a;--b;a=find(a);b=find(b);if(a!=b){if(sz[a]<sz[b])swap(a,b);p[b]=a;sz[a]+=sz[b];}}\nset<int> roots;for(int i=0;i<n;++i)roots.insert(find(i));cout<<roots.size()<<'\\n';"],
+      dijkstra: ["vector<long long> dijkstra(vector<vector<pair<int,int>>>& g,int s){\n  const long long INF=4e18;vector<long long>d(g.size(),INF);priority_queue<pair<long long,int>,vector<pair<long long,int>>,greater<>>q;\n  d[s]=0;q.push({0,s});\n  while(!q.empty()){auto[du,u]=q.top();q.pop();if(du!=d[u])continue;for(auto[v,w]:g[u])if(d[v]>du+w)d[v]=du+w,q.push({d[v],v});}\n  return d;\n}", "int n,m,s;cin>>n>>m>>s;--s;vector<vector<pair<int,int>>>g(n);while(m--){int u,v,w;cin>>u>>v>>w;--u;--v;g[u].push_back({v,w});}\nconst long long INF=4e18;vector<long long>d(n,INF);priority_queue<pair<long long,int>,vector<pair<long long,int>>,greater<>>q;d[s]=0;q.push({0,s});\nwhile(!q.empty()){auto[du,u]=q.top();q.pop();if(du!=d[u])continue;for(auto[v,w]:g[u])if(d[v]>du+w)d[v]=du+w,q.push({d[v],v});}\nfor(auto x:d)cout<<(x==INF?-1:x)<<' ';"],
+      recursion: ["int factorial(int n) {\n  if (n <= 1) return 1; // base case\n  return n * factorial(n - 1);\n}", "int n;cin>>n;function<long long(int)> fact=[&](int x)->long long{return x<=1?1:x*fact(x-1);};\ncout<<fact(n)<<'\\n';"],
+      backtrack: ["void subsets(vector<int>& a,int i,vector<int>&cur,vector<vector<int>>&out){\n  if(i==(int)a.size()){out.push_back(cur);return;}\n  subsets(a,i+1,cur,out);\n  cur.push_back(a[i]);subsets(a,i+1,cur,out);cur.pop_back();\n}", "int n;cin>>n;vector<int>a(n),cur;for(int&x:a)cin>>x;vector<vector<int>>out;\nfunction<void(int)>go=[&](int i){if(i==n){out.push_back(cur);return;}go(i+1);cur.push_back(a[i]);go(i+1);cur.pop_back();};go(0);\ncout<<out.size()<<'\\n';"],
+      permutations: ["void permute(vector<int>& a,int i,vector<vector<int>>&out){\n  if(i==(int)a.size()){out.push_back(a);return;}\n  for(int j=i;j<(int)a.size();++j){swap(a[i],a[j]);permute(a,i+1,out);swap(a[i],a[j]);}\n}", "int n;cin>>n;vector<int>a(n);iota(a.begin(),a.end(),1);\ndo{for(int x:a)cout<<x;cout<<'\\n';}while(next_permutation(a.begin(),a.end()));"],
+      combinations: ["void choose(int n,int k,int start,vector<int>&cur,vector<vector<int>>&out){\n  if((int)cur.size()==k){out.push_back(cur);return;}\n  for(int x=start;x<=n;++x){cur.push_back(x);choose(n,k,x+1,cur,out);cur.pop_back();}\n}", "int n,k;cin>>n>>k;vector<int>cur;\nfunction<void(int)>go=[&](int s){if((int)cur.size()==k){for(int x:cur)cout<<x<<' ';cout<<'\\n';return;}for(int x=s;x<=n;++x){cur.push_back(x);go(x+1);cur.pop_back();}};go(1);"],
+      memo: ["int climb(int n,vector<int>& memo){\n  if(n<=2)return n;\n  if(memo[n]!=-1)return memo[n];\n  return memo[n]=climb(n-1,memo)+climb(n-2,memo);\n}", "int n;cin>>n;vector<long long>memo(n+1,-1);function<long long(int)>f=[&](int x)->long long{if(x<=2)return x;if(memo[x]!=-1)return memo[x];return memo[x]=f(x-1)+f(x-2);};\ncout<<f(n)<<'\\n';"],
+      tabulation: ["int climbStairs(int n){\n  if(n<=2)return n;vector<int>dp(n+1);dp[1]=1;dp[2]=2;\n  for(int i=3;i<=n;++i)dp[i]=dp[i-1]+dp[i-2];\n  return dp[n];\n}", "int n;cin>>n;vector<long long>dp(max(3,n+1));dp[1]=1;dp[2]=2;\nfor(int i=3;i<=n;++i)dp[i]=dp[i-1]+dp[i-2];cout<<dp[n]<<'\\n';"],
+      dp1d: ["int rob(vector<int>& a){\n  int take=0,skip=0;\n  for(int x:a){int next=max(skip+x,take);skip=take;take=next;}\n  return take;\n}", "int n;cin>>n;long long take=0,skip=0;while(n--){long long x;cin>>x;long long next=max(skip+x,take);skip=take;take=next;}cout<<take<<'\\n';"],
+      dp2d: ["int lcs(string a,string b){\n  vector<vector<int>>dp(a.size()+1,vector<int>(b.size()+1));\n  for(int i=1;i<=a.size();++i)for(int j=1;j<=b.size();++j)\n    dp[i][j]=a[i-1]==b[j-1]?dp[i-1][j-1]+1:max(dp[i-1][j],dp[i][j-1]);\n  return dp[a.size()][b.size()];\n}", "string a,b;cin>>a>>b;int n=a.size(),m=b.size();vector<vector<int>>dp(n+1,vector<int>(m+1));\nfor(int i=1;i<=n;++i)for(int j=1;j<=m;++j)dp[i][j]=a[i-1]==b[j-1]?dp[i-1][j-1]+1:max(dp[i-1][j],dp[i][j-1]);\ncout<<dp[n][m]<<'\\n';"],
+      knapsack: ["int knapsack(vector<int>& w,vector<int>& val,int cap){\n  vector<int>dp(cap+1);\n  for(int i=0;i<(int)w.size();++i)for(int c=cap;c>=w[i];--c)\n    dp[c]=max(dp[c],dp[c-w[i]]+val[i]);\n  return dp[cap];\n}", "int n,W;cin>>n>>W;vector<int>w(n),v(n);for(int&i:w)cin>>i;for(int&i:v)cin>>i;vector<long long>dp(W+1);\nfor(int i=0;i<n;++i)for(int c=W;c>=w[i];--c)dp[c]=max(dp[c],dp[c-w[i]]+v[i]);cout<<dp[W]<<'\\n';"],
+      subsequence: ["bool isSubsequence(string s,string t){\n  int i=0;for(char c:t)if(i<s.size()&&s[i]==c)++i;\n  return i==(int)s.size();\n}", "string s,t;cin>>s>>t;int i=0;for(char c:t)if(i<(int)s.size()&&s[i]==c)++i;\ncout<<(i==(int)s.size()?\"YES\":\"NO\")<<'\\n';"],
+      transition: ["int minCoins(vector<int>& coins,int amount){\n  vector<int>dp(amount+1,amount+1);dp[0]=0;\n  for(int x=1;x<=amount;++x)for(int c:coins)if(c<=x)dp[x]=min(dp[x],dp[x-c]+1);\n  return dp[amount]>amount?-1:dp[amount];\n}", "int n,amount;cin>>n>>amount;vector<int>c(n);for(int&x:c)cin>>x;vector<int>dp(amount+1,amount+1);dp[0]=0;\nfor(int x=1;x<=amount;++x)for(int coin:c)if(coin<=x)dp[x]=min(dp[x],dp[x-coin]+1);\ncout<<(dp[amount]>amount?-1:dp[amount])<<'\\n';"],
+      minHeap: ["vector<int> minHeapOrder(vector<int>& nums) {\n  priority_queue<int,vector<int>,greater<int>> heap;\n  for(int x:nums)heap.push(x);\n  vector<int> out;while(!heap.empty()){out.push_back(heap.top());heap.pop();}\n  return out;\n}", "int n;cin>>n;priority_queue<int,vector<int>,greater<int>>pq;\nwhile(n--){int x;cin>>x;pq.push(x);}\nwhile(!pq.empty()){cout<<pq.top()<<' ';pq.pop();}"],
+      maxHeap: ["vector<int> maxHeapOrder(vector<int>& nums) {\n  priority_queue<int> heap;\n  for(int x:nums)heap.push(x);\n  vector<int> out;while(!heap.empty()){out.push_back(heap.top());heap.pop();}\n  return out;\n}", "int n;cin>>n;priority_queue<int>pq;\nwhile(n--){int x;cin>>x;pq.push(x);}\nwhile(!pq.empty()){cout<<pq.top()<<' ';pq.pop();}"],
+      topK: ["vector<int> topK(vector<int>& a,int k){\n  priority_queue<int,vector<int>,greater<int>> q;\n  for(int x:a){q.push(x);if(q.size()>k)q.pop();}\n  vector<int>out;while(!q.empty())out.push_back(q.top()),q.pop();return out;\n}", "int n,k;cin>>n>>k;priority_queue<int,vector<int>,greater<int>>q;\nwhile(n--){int x;cin>>x;q.push(x);if((int)q.size()>k)q.pop();}\nwhile(!q.empty()){cout<<q.top()<<' ';q.pop();}"],
+      medianHeap: ["priority_queue<int> lo;priority_queue<int,vector<int>,greater<int>> hi;\nvoid addNum(int x){lo.push(x);hi.push(lo.top());lo.pop();if(hi.size()>lo.size())lo.push(hi.top()),hi.pop();}\ndouble median(){return lo.size()>hi.size()?lo.top():(lo.top()+hi.top())/2.0;}", "int n;cin>>n;priority_queue<int>lo;priority_queue<int,vector<int>,greater<int>>hi;\nwhile(n--){int x;cin>>x;lo.push(x);hi.push(lo.top());lo.pop();if(hi.size()>lo.size())lo.push(hi.top()),hi.pop();cout<<(lo.size()>hi.size()?lo.top():(lo.top()+hi.top())/2.0)<<'\\n';}"],
+      mergeHeap: ["vector<int> mergeSorted(vector<vector<int>>& a){\n  using T=tuple<int,int,int>;priority_queue<T,vector<T>,greater<T>>q;\n  for(int i=0;i<a.size();++i)if(!a[i].empty())q.push({a[i][0],i,0});\n  vector<int>out;while(!q.empty()){auto[x,i,j]=q.top();q.pop();out.push_back(x);if(j+1<a[i].size())q.push({a[i][j+1],i,j+1});}return out;\n}", "int k;cin>>k;using T=pair<int,int>;priority_queue<T,vector<T>,greater<T>>q;vector<vector<int>>a(k);vector<int>idx(k);\nfor(int i=0,n;i<k;++i){cin>>n;a[i].resize(n);for(int&x:a[i])cin>>x;if(n)q.push({a[i][0],i});}\nwhile(!q.empty()){auto[x,i]=q.top();q.pop();cout<<x<<' ';if(++idx[i]<(int)a[i].size())q.push({a[i][idx[i]],i});}"],
+      kthHeap: ["int findKthLargest(vector<int>& a,int k){\n  priority_queue<int,vector<int>,greater<int>>q;\n  for(int x:a){q.push(x);if(q.size()>k)q.pop();}\n  return q.top();\n}", "int n,k;cin>>n>>k;priority_queue<int,vector<int>,greater<int>>q;\nfor(int i=0,x;i<n;++i){cin>>x;q.push(x);if((int)q.size()>k)q.pop();}cout<<q.top()<<'\\n';"],
+      hashMap: ["int firstRepeated(vector<int>& a){\n  unordered_set<int> seen;\n  for(int x:a)if(!seen.insert(x).second)return x;\n  return -1;\n}", "int n;cin>>n;unordered_map<int,int>freq;while(n--){int x;cin>>x;++freq[x];}\nfor(auto [x,c]:freq)cout<<x<<' '<<c<<'\\n';"],
+      hashSet: ["bool containsDuplicate(vector<int>& a){\n  unordered_set<int> seen;\n  for(int x:a)if(!seen.insert(x).second)return true;\n  return false;\n}", "int n;cin>>n;set<int>s;bool dup=false;while(n--){int x;cin>>x;if(!s.insert(x).second)dup=true;}\ncout<<(dup?\"YES\":\"NO\")<<'\\n';"],
+      valueIndex: ["vector<int> twoSum(vector<int>& a,int target){\n  unordered_map<int,int> at;\n  for(int i=0;i<a.size();++i){int need=target-a[i];if(at.count(need))return {at[need],i};at[a[i]]=i;}\n  return {};\n}", "int n,target;cin>>n>>target;unordered_map<int,int>at;\nfor(int i=0,x;i<n;++i){cin>>x;if(at.count(target-x)){cout<<at[target-x]+1<<' '<<i+1<<'\\n';return 0;}at[x]=i;}cout<<\"IMPOSSIBLE\\n\";"],
+      grouping: ["vector<vector<string>> group(vector<string>& words){\n  unordered_map<string,vector<string>> m;\n  for(auto s:words){string key=s;sort(key.begin(),key.end());m[key].push_back(s);}\n  vector<vector<string>>out;for(auto&[k,v]:m)out.push_back(v);return out;\n}", "int n;cin>>n;map<string,vector<string>>groups;while(n--){string s;cin>>s;string key=s;sort(key.begin(),key.end());groups[key].push_back(s);}\ncout<<groups.size()<<'\\n';for(auto&[k,v]:groups){for(auto&s:v)cout<<s<<' ';cout<<'\\n';}"],
+      prefixHash: ["int subarraySum(vector<int>& a,int k){\n  unordered_map<int,int>freq{{0,1}};int sum=0,count=0;\n  for(int x:a){sum+=x;count+=freq[sum-k];++freq[sum];}\n  return count;\n}", "int n,k;cin>>n>>k;unordered_map<long long,int>freq{{0,1}};long long sum=0,ans=0;\nwhile(n--){int x;cin>>x;sum+=x;ans+=freq[sum-k];++freq[sum];}cout<<ans<<'\\n';"],
+      bitAnd: ["unsigned bitAnd(unsigned a,unsigned b){return a & b;}", "unsigned a,b;cin>>a>>b;cout<<(a&b)<<'\\n';"],
+      bitOr: ["unsigned bitOr(unsigned a,unsigned b){return a | b;}", "unsigned a,b;cin>>a>>b;cout<<(a|b)<<'\\n';"],
+      bitXor: ["unsigned bitXor(unsigned a,unsigned b){return a ^ b;}", "unsigned a,b;cin>>a>>b;cout<<(a^b)<<'\\n';"],
+      bitNot: ["unsigned bitNot(unsigned x){return ~x;}", "unsigned x;cin>>x;cout<<(~x)<<'\\n';"],
+      leftShift: ["unsigned mask(int bit){return 1u << bit;}\nunsigned doubled(unsigned x){return x << 1;}", "unsigned x;int bit;cin>>x>>bit;\ncout<<(x<<1)<<' '<<(1u<<bit)<<'\\n';"],
+      rightShift: ["unsigned half(unsigned x){return x >> 1;}\nunsigned bitAt(unsigned x,int bit){return (x >> bit) & 1u;}", "unsigned x;int bit;cin>>x>>bit;\ncout<<(x>>1)<<' '<<((x>>bit)&1u)<<'\\n';"],
+      setBit: ["unsigned setBit(unsigned x,int bit){return x | (1u << bit);}\nunsigned clearBit(unsigned x,int bit){return x & ~(1u << bit);}", "unsigned x;int bit;cin>>x>>bit;\ncout<<(x|(1u<<bit))<<' '<<(x&~(1u<<bit))<<'\\n';"],
+      popcount: ["int countBits(unsigned x){\n  int count=0;while(x){x&=(x-1);++count;}return count;\n}", "unsigned x;cin>>x;int count=0;while(x){x&=x-1;++count;}cout<<count<<'\\n';"],
+      bubbleSort: ["void bubbleSort(vector<int>& a){\n  for(int i=0;i<a.size();++i)for(int j=0;j+1<(int)a.size()-i;++j)\n    if(a[j]>a[j+1])swap(a[j],a[j+1]);\n}", "int n;cin>>n;vector<int>a(n);for(int&x:a)cin>>x;\nfor(int i=0;i<n;++i)for(int j=0;j+1<n-i;++j)if(a[j]>a[j+1])swap(a[j],a[j+1]);\nfor(int x:a)cout<<x<<' ';"],
+      selectionSort: ["void selectionSort(vector<int>& a){\n  for(int i=0;i<a.size();++i){int m=i;for(int j=i+1;j<a.size();++j)if(a[j]<a[m])m=j;swap(a[i],a[m]);}\n}", "int n;cin>>n;vector<int>a(n);for(int&x:a)cin>>x;\nfor(int i=0;i<n;++i){int m=i;for(int j=i+1;j<n;++j)if(a[j]<a[m])m=j;swap(a[i],a[m]);}\nfor(int x:a)cout<<x<<' ';"],
+      insertionSort: ["void insertionSort(vector<int>& a){\n  for(int i=1;i<a.size();++i){int x=a[i],j=i-1;while(j>=0&&a[j]>x)a[j+1]=a[j],--j;a[j+1]=x;}\n}", "int n;cin>>n;vector<int>a(n);for(int&x:a)cin>>x;\nfor(int i=1;i<n;++i){int x=a[i],j=i-1;while(j>=0&&a[j]>x)a[j+1]=a[j],--j;a[j+1]=x;}\nfor(int x:a)cout<<x<<' ';"],
+      mergeSort: ["void mergeSort(vector<int>& a,int l,int r){\n  if(r-l<=1)return;int m=(l+r)/2;mergeSort(a,l,m);mergeSort(a,m,r);\n  inplace_merge(a.begin()+l,a.begin()+m,a.begin()+r);\n}", "int n;cin>>n;vector<int>a(n);for(int&x:a)cin>>x;\nfunction<void(int,int)>ms=[&](int l,int r){if(r-l<=1)return;int m=(l+r)/2;ms(l,m);ms(m,r);inplace_merge(a.begin()+l,a.begin()+m,a.begin()+r);};ms(0,n);\nfor(int x:a)cout<<x<<' ';"],
+      quickSort: ["void quickSort(vector<int>& a,int l,int r){\n  if(l>=r)return;int p=a[(l+r)/2],i=l,j=r;\n  while(i<=j){while(a[i]<p)++i;while(a[j]>p)--j;if(i<=j)swap(a[i++],a[j--]);}\n  if(l<j)quickSort(a,l,j);if(i<r)quickSort(a,i,r);\n}", "int n;cin>>n;vector<int>a(n);for(int&x:a)cin>>x;\nfunction<void(int,int)>qs=[&](int l,int r){if(l>=r)return;int p=a[(l+r)/2],i=l,j=r;while(i<=j){while(a[i]<p)++i;while(a[j]>p)--j;if(i<=j)swap(a[i++],a[j--]);}if(l<j)qs(l,j);if(i<r)qs(i,r);};qs(0,n-1);\nfor(int x:a)cout<<x<<' ';"],
+      countingSort: ["vector<int> countingSort(vector<int>& a,int maxValue){\n  vector<int>freq(maxValue+1);for(int x:a)++freq[x];vector<int>out;\n  for(int x=0;x<=maxValue;++x)while(freq[x]--)out.push_back(x);\n  return out;\n}", "int n,m;cin>>n>>m;vector<int>f(m+1);while(n--){int x;cin>>x;++f[x];}\nfor(int x=0;x<=m;++x)while(f[x]--)cout<<x<<' ';"],
+      bucketSort: ["void bucketSort(vector<double>& a){\n  vector<vector<double>>b(a.size());for(double x:a)b[min((int)(x*a.size()),(int)a.size()-1)].push_back(x);\n  for(auto&v:b)sort(v.begin(),v.end());int i=0;for(auto&v:b)for(double x:v)a[i++]=x;\n}", "int n;cin>>n;vector<double>a(n);for(double&x:a)cin>>x;\n// For values in [0,1): distribute into buckets, sort each bucket, concatenate.\nvector<vector<double>>b(n);for(double x:a)b[min((int)(x*n),n-1)].push_back(x);for(auto&v:b)sort(v.begin(),v.end());for(auto&v:b)for(double x:v)cout<<x<<' ';"],
+      comparator: ["sort(tasks.begin(),tasks.end(),[](auto& a,auto& b){\n  if(a.first!=b.first)return a.first<b.first;\n  return a.second>b.second;\n});", "int n;cin>>n;vector<pair<int,int>>a(n);for(auto&[x,y]:a)cin>>x>>y;\nsort(a.begin(),a.end(),[](auto l,auto r){return l.first!=r.first?l.first<r.first:l.second>r.second;});\nfor(auto[x,y]:a)cout<<x<<' '<<y<<'\\n';"],
+      intervalSort: ["sort(intervals.begin(),intervals.end(),[](auto& a,auto& b){\n  return a[0] < b[0];\n});\n// After sorting by start, sweep once to merge overlaps.", "int n;cin>>n;vector<pair<int,int>>a(n);for(auto&[l,r]:a)cin>>l>>r;\nsort(a.begin(),a.end());for(auto[l,r]:a)cout<<l<<' '<<r<<'\\n';"],
+      linearSearch: ["int findValue(vector<int>& a,int target){\n  for(int i=0;i<a.size();++i)if(a[i]==target)return i;\n  return -1;\n}", "int n,x;cin>>n>>x;int answer=-1;for(int i=0,v;i<n;++i){cin>>v;if(v==x&&answer<0)answer=i;}\ncout<<answer<<'\\n';"],
+      binarySearch: ["int binarySearch(vector<int>& a,int x){\n  int l=0,r=a.size();\n  while(l<r){int m=l+(r-l)/2;if(a[m]<x)l=m+1;else r=m;}\n  return l<a.size()&&a[l]==x?l:-1;\n}", "int n,x;cin>>n>>x;vector<int>a(n);for(int&v:a)cin>>v;\nauto it=lower_bound(a.begin(),a.end(),x);cout<<(it==a.end()||*it!=x?-1:int(it-a.begin()))<<'\\n';"],
+      answerSearch: ["bool feasible(long long speed,vector<int>& piles,int h){\n  long long hours=0;for(int p:piles)hours+=(p+speed-1)/speed;\n  return hours<=h;\n}\n// Binary-search the smallest speed for which feasible(speed) is true.", "int n,h;cin>>n>>h;vector<int>a(n);for(int&x:a)cin>>x;int l=1,r=*max_element(a.begin(),a.end());\nwhile(l<r){int m=l+(r-l)/2;long long hours=0;for(int x:a)hours+=(x+m-1)/m;if(hours<=h)r=m;else l=m+1;}cout<<l<<'\\n';"],
+      rotatedSearch: ["int search(vector<int>& a,int x){\n  int l=0,r=a.size()-1;\n  while(l<=r){int m=l+(r-l)/2;if(a[m]==x)return m;\n    if(a[l]<=a[m]){if(a[l]<=x&&x<a[m])r=m-1;else l=m+1;}\n    else{if(a[m]<x&&x<=a[r])l=m+1;else r=m-1;}}\n  return -1;\n}", "int n,x;cin>>n>>x;vector<int>a(n);for(int&v:a)cin>>v;int l=0,r=n-1,ans=-1;\nwhile(l<=r){int m=(l+r)/2;if(a[m]==x){ans=m;break;}if(a[l]<=a[m]){if(a[l]<=x&&x<a[m])r=m-1;else l=m+1;}else{if(a[m]<x&&x<=a[r])l=m+1;else r=m-1;}}\ncout<<ans<<'\\n';"],
+      lowerBound: ["int lower(vector<int>& a,int x){\n  return lower_bound(a.begin(),a.end(),x)-a.begin(); // first value >= x\n}", "int n,q;cin>>n>>q;vector<int>a(n);for(int&x:a)cin>>x;while(q--){int x;cin>>x;cout<<lower_bound(a.begin(),a.end(),x)-a.begin()<<'\\n';}"],
+      upperBound: ["int upper(vector<int>& a,int x){\n  return upper_bound(a.begin(),a.end(),x)-a.begin(); // first value > x\n}", "int n,q;cin>>n>>q;vector<int>a(n);for(int&x:a)cin>>x;while(q--){int x;cin>>x;cout<<upper_bound(a.begin(),a.end(),x)-a.begin()<<'\\n';}"],
+      matrixSearch: ["bool searchMatrix(vector<vector<int>>& a,int x){\n  int n=a.size(),m=a[0].size(),l=0,r=n*m;\n  while(l<r){int k=l+(r-l)/2,v=a[k/m][k%m];if(v<x)l=k+1;else r=k;}\n  return l<n*m&&a[l/m][l%m]==x;\n}", "int n,m,x;cin>>n>>m>>x;vector<vector<int>>a(n,vector<int>(m));for(auto&r:a)for(int&v:r)cin>>v;\nint l=0,r=n*m;while(l<r){int k=(l+r)/2;if(a[k/m][k%m]<x)l=k+1;else r=k;}cout<<(l<n*m&&a[l/m][l%m]==x?\"YES\":\"NO\")<<'\\n';"]
+    };
+
+    const aliases = {
+      "treeDepth": "treeDfs", "trieInsert": "trieInsert", "trieSearch": "trieSearch",
+      "wordSearch": "wordSearch", "baseCase": "recursion", "transition": "transition",
+      "subsets": "backtrack", "backtrack": "backtrack", "combinations": "combinations", "permutations": "permutations",
+      "bubbleSort": "bubbleSort", "selectionSort": "selectionSort", "insertionSort": "insertionSort", "mergeSort": "mergeSort", "quickSort": "quickSort", "countingSort": "countingSort", "bucketSort": "bucketSort",
+      "maxHeap": "maxHeap", "minHeap": "minHeap", "topK": "topK", "kthHeap": "kthHeap", "medianHeap": "medianHeap", "mergeHeap": "mergeHeap",
+      "leftShift": "leftShift", "rightShift": "rightShift",
+      "checkBit": "rightShift", "setBit": "setBit", "clearBit": "setBit", "popcount": "popcount",
+      "listTraversal": "listTraversal", "cycleList": "cycleList", "reverseList": "reverseList", "mergeLists": "mergeLists", "dummyNode": "dummyNode",
+      "preorder": "preorder", "inorder": "inorder", "postorder": "postorder", "bst": "bst", "lca": "lca",
+      "stackOps": "stackOps", "queueOps": "queueOps", "monoStack": "monoStack", "parentheses": "parentheses", "rpn": "rpn", "minStack": "minStack",
+      "graphRep": "graphRep", "graphBfs": "graphBfs", "graphDfs": "graphDfs", "components": "components", "graphCycle": "graphCycle", "topo": "topo", "unweightedPath": "unweightedPath", "multiBfs": "multiBfs", "unionFind": "unionFind", "dijkstra": "dijkstra",
+      "recursion": "recursion", "memo": "memo", "tabulation": "tabulation", "dp1d": "dp1d", "dp2d": "dp2d", "knapsack": "knapsack", "subsequence": "subsequence",
+      "hashMap": "hashMap", "hashSet": "hashSet", "valueIndex": "valueIndex", "grouping": "grouping", "prefixHash": "prefixHash",
+      "binarySearch": "binarySearch", "answerSearch": "answerSearch", "rotatedSearch": "rotatedSearch", "lowerBound": "lowerBound", "upperBound": "upperBound", "matrixSearch": "matrixSearch"
+    };
+    const patternFor = key => aliases[key] || key;
+    const stateKey = "dsa-field-guide-progress-v1";
+    let progress = {};
+    try { progress = JSON.parse(localStorage.getItem(stateKey) || "{}"); } catch (error) { console.warn("Could not read saved DSA progress.", error); }
+    const el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
+    const topicsRoot = document.getElementById("topics");
+    const nav = document.getElementById("topic-nav");
+
+    function setDone(key, value) {
+      progress[key] = value;
+      try { localStorage.setItem(stateKey, JSON.stringify(progress)); }
+      catch (error) { console.error("Could not save DSA progress to localStorage.", error); }
+      updateProgress();
+      applyFilter();
+    }
+    function makeSnippet(patternKey, conceptName, topicName, index) {
+      const pair = snippets[patternFor(patternKey)] || snippets.traversal;
+      const details = el("details");
+      const summary = el("summary", "", "View C++ example · LeetCode / Codeforces");
+      details.append(summary);
+      const box = el("div", "snippet-box");
+      box.dataset.pattern = patternFor(patternKey);
+      const bar = el("div", "snippet-toolbar");
+      const lc = el("button", "tab active", "LeetCode");
+      const cf = el("button", "tab", "Codeforces");
+      lc.type = cf.type = "button";
+      const copy = el("button", "copy", "Copy code");
+      copy.type = "button";
+      bar.append(lc, cf, copy);
+      const pre = el("pre");
+      const code = el("code");
+      const heading = `// ${topicName} · ${conceptName}\n// Example ${index + 1}: adapt the function signature and constraints to the problem.\n`;
+      const lcSource = pair[0].includes("class MinStack")
+        ? pair[0]
+        : `class Solution {\npublic:\n${pair[0]}\n};`;
+      code.textContent = `#include <bits/stdc++.h>\nusing namespace std;\n\n${heading}${lcSource}`;
+      pre.append(code);
+      box.append(bar, pre);
+      details.append(box);
+      lc.addEventListener("click", () => {
+        lc.classList.add("active"); cf.classList.remove("active");
+        code.textContent = `#include <bits/stdc++.h>\nusing namespace std;\n\n${heading}${lcSource}`;
+      });
+      cf.addEventListener("click", () => {
+        cf.classList.add("active"); lc.classList.remove("active");
+        code.textContent = `#include <bits/stdc++.h>\nusing namespace std;\n\n// ${topicName} · ${conceptName} · contest-style example\n` + pair[1] + "\n// Adapt the input parser to the exact statement.";
+      });
+      copy.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(code.textContent); copy.textContent = "Copied!"; setTimeout(() => copy.textContent = "Copy code", 1200); }
+        catch (error) { console.error("Could not copy the snippet.", error); copy.textContent = "Copy unavailable"; setTimeout(() => copy.textContent = "Copy code", 1600); }
+      });
+      return details;
+    }
+    function render() {
+      topicsRoot.replaceChildren(); nav.replaceChildren();
+      topics.forEach((topic, ti) => {
+        const id = `topic-${ti}`;
+        const anchor = el("a", "", `${String(ti + 1).padStart(2, "0")} ${topic.title}`);
+        anchor.href = `#${id}`; nav.append(anchor);
+        const details = el("details", "topic"); details.id = id;
+        const head = el("summary", "topic-head");
+        const icon = el("span", "topic-icon", topic.icon);
+        const title = el("span", "topic-title");
+        title.append(el("strong", "", `${String(ti + 1).padStart(2, "0")} · ${topic.title}`));
+        title.append(el("small", "", `${topic.concepts.length} concepts · ${topic.problems.length} practice problems`));
+        const count = el("span", "topic-progress");
+        head.append(icon, title, count);
+        const body = el("div", "topic-body");
+        body.append(el("h3", "subheading", "Sub-concepts · check off as you learn"));
+        const conceptList = el("div", "concept-list");
+        topic.concepts.forEach(([name, pattern], ci) => {
+          const key = `concept:${ti}:${ci}`;
+          const card = el("article", "concept");
+          const top = el("div", "concept-top");
+          const checkbox = el("input", "check"); checkbox.type = "checkbox"; checkbox.checked = Boolean(progress[key]); checkbox.setAttribute("aria-label", `Mark ${name} done`);
+          const label = el("span", "concept-name", name);
+          top.append(checkbox, label); card.append(top);
+          checkbox.addEventListener("change", () => { setDone(key, checkbox.checked); card.classList.toggle("done", checkbox.checked); });
+          if (checkbox.checked) card.classList.add("done");
+          card.append(makeSnippet(pattern, name, topic.title, ci));
+          conceptList.append(card);
+        });
+        body.append(conceptList);
+        body.append(el("h3", "subheading", "LeetCode practice"));
+        const problems = el("div", "problem-list");
+        topic.problems.forEach(([name, url], pi) => {
+          const key = `problem:${ti}:${pi}`;
+          const item = el("div", "problem");
+          const checkbox = el("input", "check"); checkbox.type = "checkbox"; checkbox.checked = Boolean(progress[key]); checkbox.setAttribute("aria-label", `Mark ${name} done`);
+          const link = el("a", "", name); link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer";
+          item.append(checkbox, link); if (checkbox.checked) item.classList.add("done");
+          checkbox.addEventListener("change", () => { setDone(key, checkbox.checked); item.classList.toggle("done", checkbox.checked); });
+          problems.append(item);
+        });
+        body.append(problems);
+        details.append(head, body); topicsRoot.append(details);
+        details.addEventListener("toggle", updateExpandLabel);
+      });
+      updateProgress();
+      applyFilter();
+    }
+    function allItems() {
+      const items = [];
+      topics.forEach((t, ti) => {
+        t.concepts.forEach((_, ci) => items.push(`concept:${ti}:${ci}`));
+        t.problems.forEach((_, pi) => items.push(`problem:${ti}:${pi}`));
+      });
+      return items;
+    }
+    function updateProgress() {
+      const items = allItems(), done = items.filter(k => progress[k]).length;
+      const pct = items.length ? Math.round(done / items.length * 100) : 0;
+      document.getElementById("percent").textContent = `${pct}%`;
+      document.getElementById("bar").style.width = `${pct}%`;
+      document.querySelector('[role="progressbar"]').setAttribute("aria-valuenow", pct);
+      document.getElementById("done-count").textContent = `${done} done`;
+      document.getElementById("total-count").textContent = `${items.length} items`;
+      document.querySelectorAll(".topic").forEach((section, ti) => {
+        const keys = [...topics[ti].concepts.map((_, i) => `concept:${ti}:${i}`), ...topics[ti].problems.map((_, i) => `problem:${ti}:${i}`)];
+        const count = keys.filter(k => progress[k]).length;
+        section.querySelector(".topic-progress").textContent = `${count}/${keys.length}`;
+      });
+    }
+    function applyFilter() {
+      const query = document.getElementById("search").value.trim().toLowerCase();
+      const filter = document.getElementById("filter").value;
+      let shown = 0;
+      document.querySelectorAll(".topic").forEach((section, ti) => {
+        let visible = false;
+        section.querySelectorAll(".concept").forEach((card, ci) => {
+          const done = Boolean(progress[`concept:${ti}:${ci}`]);
+          const text = card.querySelector(".concept-name").textContent.toLowerCase();
+          const match = (!query || text.includes(query) || topics[ti].title.toLowerCase().includes(query)) && (filter === "all" || (filter === "done" ? done : !done));
+          card.hidden = !match; if (match) visible = true;
+        });
+        section.querySelectorAll(".problem").forEach((item, pi) => {
+          const done = Boolean(progress[`problem:${ti}:${pi}`]);
+          const text = item.querySelector("a").textContent.toLowerCase();
+          const match = (!query || text.includes(query) || topics[ti].title.toLowerCase().includes(query)) && (filter === "all" || (filter === "done" ? done : !done));
+          item.hidden = !match; if (match) visible = true;
+        });
+        section.hidden = !visible; if (visible) ++shown;
+      });
+      document.getElementById("empty").style.display = shown ? "none" : "block";
+    }
+    function updateExpandLabel() {
+      const allOpen = [...document.querySelectorAll(".topic")].every(x => x.open);
+      document.getElementById("expand").textContent = allOpen ? "Collapse all" : "Expand all";
+    }
+    document.getElementById("search").addEventListener("input", applyFilter);
+    document.getElementById("filter").addEventListener("change", applyFilter);
+    document.getElementById("expand").addEventListener("click", () => {
+      const open = ![...document.querySelectorAll(".topic")].every(x => x.open);
+      document.querySelectorAll(".topic").forEach(x => x.open = open);
+      updateExpandLabel();
+    });
+    document.getElementById("reset").addEventListener("click", () => {
+      if (!confirm("Clear all saved concept and problem checkmarks?")) return;
+      progress = {};
+      try { localStorage.removeItem(stateKey); }
+      catch (error) { console.error("Could not clear saved DSA progress.", error); }
+      render();
+    });
+    render();
+  </script>
+</body>
+</html>
